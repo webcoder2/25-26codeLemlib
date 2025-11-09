@@ -13,7 +13,7 @@
 int autonNum = 0;
 int intakeRun = 0;
 int outtake = 0;
-bool pivotVar = false;
+bool pivotVar = true;
 bool loaderVar = true;
 pros::MotorGroup left_motors({-6, 16, -17}, pros::MotorGearset::blue); // Left motors on ports 20, 3, 5
 pros::MotorGroup right_motors({7, -9, 8}, pros::MotorGearset::blue); // Right motors on ports 13, 16, 17
@@ -33,8 +33,8 @@ lemlib::Drivetrain drivetrain(&left_motors, // Left motor group
                               2 // Horizontal drift is 2 (for now)
 );
 lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_sensor, lemlib::Omniwheel::NEW_2, -2.65);
-lemlib::TrackingWheel vert_tracking_wheel(&vert_sensor, lemlib::Omniwheel::NEW_2, -2.65);
-lemlib::OdomSensors sensors(/*&vert_tracking_wheel*/nullptr,
+lemlib::TrackingWheel vert_tracking_wheel(&vert_sensor, lemlib::Omniwheel::NEW_2, 0);
+lemlib::OdomSensors sensors(&vert_tracking_wheel,
                             nullptr,
                             /*&horizontal_tracking_wheel*/nullptr, 
                             nullptr,
@@ -220,14 +220,8 @@ void opcontrol() {
 		chassis.arcade(leftY, rightY);
         if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
         {
-            if(pivotVar)
-            {  
-                pivot.set_value(true);                
-            }
-            else {
-                pivot.set_value(false);
-            }
-            pivotVar = !pivotVar;
+            pivotVar = !pivotVar; // toggle
+            pivot.set_value(pivotVar);
         }
 		if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT))
         {
