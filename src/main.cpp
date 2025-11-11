@@ -12,7 +12,7 @@
 
 int autonNum = 0;
 int intakeRun = 0;
-int outtake = 0;
+bool outtake = true;
 bool pivotVar = true;
 bool loaderVar = true;
 pros::MotorGroup left_motors({-6, 16, -17}, pros::MotorGearset::blue); // Left motors on ports 20, 3, 5
@@ -21,10 +21,11 @@ pros::Imu imu(10);
 pros::MotorGroup intake({-18,-19});
 pros::Motor endIntake(20);
 pros::Rotation horizontal_sensor(8);
-pros::Rotation vert_sensor(12);
+pros::Rotation vert_sensor(15);
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 pros::adi::DigitalOut pivot('A');
 pros::adi::DigitalOut loader('C');
+pros::adi::DigitalOut outTake('H');
 lemlib::Drivetrain drivetrain(&left_motors, // Left motor group
                               &right_motors, // Right motor group
                               9.85, // 12.675 inch track width
@@ -40,15 +41,15 @@ lemlib::OdomSensors sensors(&vert_tracking_wheel,
                             nullptr,
                             &imu);
 // Lateral PID controller
-lemlib::ControllerSettings lateral_controller(3, // Proportional gain (kP)
-                                              0, // Integral gain (kI)
-                                              15, // Derivative gain (kD)
-                                              0, // Anti windup 3
+lemlib::ControllerSettings lateral_controller(10, // Proportional gain (kP)
+                                              .1, // Integral gain (kI)
+                                              18, // Derivative gain (kD)
+                                              1.5, // Anti windup 3
                                               0, // Small error range, in inches .25
                                               00, //100 Small error range timeout, in milliseconds
                                               0, // 1Large error range, in inches
                                               00, //500 Large error range timeout, in milliseconds
-                                              20 // 20Maximum acceleration (slew)
+                                              90 // 20Maximum acceleration (slew)
 );
 
 // Angular PID controller
@@ -123,13 +124,11 @@ void initialize() {
                     intakeRun = 0;
                 }
                 intake.move_velocity(600*intakeRun);
-                if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
-                    outtake = 1;
+                if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L1)) {
+                    outtake = !outtake; // toggle
+                    outTake.set_value(outtake);
                 }
-                else {
-                    outtake=0;
-                }
-                endIntake.move_velocity(600*outtake);
+                //endIntake.move_velocity(600*outtake);
             }
             pros::delay(20);
 
@@ -173,18 +172,18 @@ void autonomous()
         
         chassis.setPose(0,0,0);
         //intake.move_velocity(600);
-        chassis.moveToPoint(0, 48, 100000);
+        chassis.moveToPose(0,48,0,100000);
     }
     else if(autonNum ==1){
-        chassis.setPose(-65,-16,90);
+        chassis.setPose(-54,-16,90);
 
         chassis.moveToPose(-35, -16, 90, 5000);
         chassis.turnToHeading(135, 3000);
         chassis.moveToPose(-14.08, -30, 135, 3000);
-        chassis.turnToHeading(225, 3000);
-        chassis.moveToPose(-48, -48, 225, 5000);
-        chassis.turnToHeading(90, 3000);
-        chassis.moveToPose(30, -48, 90, 5000);
+        //chassis.turnToHeading(225, 3000);
+        //chassis.moveToPose(-48, -48, 225, 5000);
+        //chassis.turnToHeading(90, 3000);
+        //chassis.moveToPose(30, -48, 90, 5000);
     }
     else if(autonNum ==2){
         chassis.setPose(-65,15.375,90);
