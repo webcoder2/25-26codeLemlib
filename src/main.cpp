@@ -9,16 +9,19 @@
 #include "pros/motors.hpp"
 #include <sys/_intsup.h>
 #include "pros/llemu.hpp"
+#include "pros/rtos.hpp"
 
 int autonNum = 0;
 int intakeRun = 0;
-bool outtake = true;
-bool pivotVar = true;
+bool outtake = false;
+bool pivotVar = false;
 bool loaderVar = true;
 pros::MotorGroup left_motors({-6, 16, -17}, pros::MotorGearset::blue); // Left motors on ports 20, 3, 5
 pros::MotorGroup right_motors({7, -9, 8}, pros::MotorGearset::blue); // Right motors on ports 13, 16, 17
 pros::Imu imu(10);
-pros::MotorGroup intake({-18,-19});
+pros::Motor lowerMotor(-18);
+pros::Motor upperMotor(-19);
+//pros::MotorGroup intake({lowerMotor,upperMotor});
 pros::Motor endIntake(20);
 pros::Rotation horizontal_sensor(8);
 pros::Rotation vert_sensor(15);
@@ -45,10 +48,10 @@ lemlib::ControllerSettings lateral_controller(10, // Proportional gain (kP)
                                               .1, // Integral gain (kI)
                                               18, // Derivative gain (kD)
                                               1.5, // Anti windup 3
-                                              0, // Small error range, in inches .25
-                                              00, //100 Small error range timeout, in milliseconds
-                                              0, // 1Large error range, in inches
-                                              00, //500 Large error range timeout, in milliseconds
+                                              .25, // Small error range, in inches .25
+                                              200, //100 Small error range timeout, in milliseconds
+                                              10, // 1Large error range, in inches
+                                              500, //500 Large error range timeout, in milliseconds
                                               90 // 20Maximum acceleration (slew)
 );
 
@@ -98,7 +101,9 @@ void on_center_button() {
  */
 void initialize() {
 	chassis.calibrate();
-    loader.set_value(true);
+    loader.set_value(loaderVar);
+    pivot.set_value(pivotVar);
+    outTake.set_value(outtake);
     pros::lcd::initialize();
     //endIntake.set_brake_mode(pros::MotorBrake::hold);
     pros:: Task screenTask([&]() {
@@ -123,7 +128,8 @@ void initialize() {
                 else{
                     intakeRun = 0;
                 }
-                intake.move_velocity(600*intakeRun);
+                lowerMotor.move_velocity(600*intakeRun);
+                upperMotor.move_velocity(600*intakeRun);
                 if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_L1)) {
                     outtake = !outtake; // toggle
                     outTake.set_value(outtake);
@@ -167,34 +173,67 @@ void competition_initialize() {}
  */
 void autonomous() 
 {
-    if(autonNum == 0)
+    if(autonNum == 1)
     {
         
         chassis.setPose(0,0,0);
         //intake.move_velocity(600);
         chassis.moveToPose(0,48,0,100000);
     }
-    else if(autonNum ==1){
+    else if(autonNum ==0){
         chassis.setPose(-54,-16,90);
-
-        chassis.moveToPose(-35, -16, 90, 5000);
-        chassis.turnToHeading(135, 3000);
-        chassis.moveToPose(-14.08, -30, 135, 3000);
-        //chassis.turnToHeading(225, 3000);
-        //chassis.moveToPose(-48, -48, 225, 5000);
-        //chassis.turnToHeading(90, 3000);
-        //chassis.moveToPose(30, -48, 90, 5000);
+        lowerMotor.move_velocity(600);
+        chassis.moveToPose(-35, -16, 90, 1750);
+        chassis.turnToHeading(125, 1500);
+        chassis.moveToPose(-24, -24, 125, 3500,{.maxSpeed =70},false);
+        pros::delay(100);
+        lowerMotor.move_velocity(0);
+        chassis.turnToHeading(45, 3000);
+        chassis.moveToPose(-13, -13, 45, 2000);
+        lowerMotor.move_velocity(-600);
+        upperMotor.move_velocity(-600);
+        pros::delay(3500);
+        chassis.moveToPose(-24, -24, 45, 2000,{.forwards=false},false);
+        chassis.turnToHeading(225, 1500);
+        lowerMotor.move_velocity(600);
+        upperMotor.move_velocity(600);
+        chassis.moveToPose(-59, -48, 270, 5000);
+        pros::delay(1000);
+        chassis.moveToPose(-48, -48, 270, 1000, {.forwards=false});
+        chassis.turnToHeading(90, 1000);
+        chassis.moveToPose(-31.75, -48, 90, 1500);
+        outtake=!outtake;
+        outTake.set_value(outtake);
     }
     else if(autonNum ==2){
-        chassis.setPose(-65,15.375,90);
-
-        chassis.moveToPose(-29, 15.375, 90, 5000);
-        chassis.turnToHeading(45, 3000);
-        chassis.moveToPose(-14.08, 30, 45, 3000);
-        chassis.turnToHeading(-45, 3000);
-        chassis.moveToPose(-48, 48, -45, 5000);
-        chassis.turnToHeading(90, 3000);
-        chassis.moveToPose(30, 48, 90, 5000);
+        chassis.setPose(-54,16,90);
+        lowerMotor.move_velocity(600);
+        upperMotor.move_velocity(600);
+        chassis.moveToPose(-35, 16, 90, 1750);
+        chassis.turnToHeading(55, 1500);
+        chassis.moveToPose(-24, 24, 55, 3500,{.maxSpeed =70},false);
+        pros::delay(100);
+        lowerMotor.move_velocity(0);
+        chassis.turnToHeading(135, 3000);
+        chassis.moveToPose(-13, 13, 45, 2000);
+        lowerMotor.move_velocity(600);
+        upperMotor.move_velocity(600);
+        outtake=!outtake;
+        outTake.set_value(outtake);
+        pros::delay(3500);
+        chassis.moveToPose(-24, 24, 135, 2000,{.forwards=false},false);
+        outtake=!outtake;
+        outTake.set_value(outtake);
+        chassis.turnToHeading(-45, 1500);
+        lowerMotor.move_velocity(600);
+        upperMotor.move_velocity(600);
+        chassis.moveToPose(-59, 48, -90, 5000);
+        pros::delay(1000);
+        chassis.moveToPose(-48, 48, -90, 1000, {.forwards=false});
+        chassis.turnToHeading(90, 1000);
+        chassis.moveToPose(-31.75, 48, 90, 1500);
+        outtake=!outtake;
+        outTake.set_value(outtake);
     }
 }
 
