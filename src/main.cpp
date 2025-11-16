@@ -15,7 +15,7 @@ int autonNum = 0;
 int intakeRun = 0;
 bool outtake = false;
 bool pivotVar = false;
-bool loaderVar = true;
+bool loaderVar = false;
 pros::MotorGroup left_motors({-6, 16, -17}, pros::MotorGearset::blue); // Left motors on ports 20, 3, 5
 pros::MotorGroup right_motors({7, -9, 8}, pros::MotorGearset::blue); // Right motors on ports 13, 16, 17
 pros::Imu imu(10);
@@ -44,25 +44,25 @@ lemlib::OdomSensors sensors(&vert_tracking_wheel,
                             nullptr,
                             &imu);
 // Lateral PID controller
-lemlib::ControllerSettings lateral_controller(10, // Proportional gain (kP)
+lemlib::ControllerSettings lateral_controller(11, // Proportional gain (kP)
                                               .1, // Integral gain (kI)
-                                              18, // Derivative gain (kD)
+                                              20, // Derivative gain (kD)
                                               1.5, // Anti windup 3
-                                              .25, // Small error range, in inches .25
-                                              200, //100 Small error range timeout, in milliseconds
-                                              10, // 1Large error range, in inches
+                                              0.25, // Small error range, in inches .25
+                                              200, //200 Small error range timeout, in milliseconds
+                                              10, // 10 Large error range, in inches
                                               500, //500 Large error range timeout, in milliseconds
-                                              90 // 20Maximum acceleration (slew)
+                                              110 // 90Maximum acceleration (slew)
 );
 
 // Angular PID controller
-lemlib::ControllerSettings angular_controller(2.05, // Proportional gain (kP)
-                                              .2, // Integral gain (kI)
-                                              20, // Derivative gain (kD)
+lemlib::ControllerSettings angular_controller(3, // Proportional gain (kP)
+                                              .23, // Integral gain (kI)
+                                              28, // Derivative gain (kD)
                                               6, // Anti windup
-                                              .225, // Small error range, in degrees.5
-                                              500, // 500Small error range timeout, in milliseconds
-                                              .75, // 1Large error range, in degrees
+                                              0.225, // Small error range, in degrees.5
+                                              400, // 500Small error range timeout, in milliseconds
+                                              0.75, // 1Large error range, in degrees
                                               1000, // 1000Large error range timeout, in milliseconds
                                               0 // Maximum acceleration (slew)
 );
@@ -178,30 +178,36 @@ void autonomous()
         
         chassis.setPose(0,0,0);
         //intake.move_velocity(600);
-        chassis.moveToPose(0,48,0,100000);
+        chassis.moveToPoint(0,48,100000000);
+        //chassis.turnToHeading(90, 10000000);
     }
     else if(autonNum ==0){
         chassis.setPose(-54,-16,90);
         lowerMotor.move_velocity(600);
-        chassis.moveToPose(-35, -16, 90, 1750);
-        chassis.turnToHeading(125, 1500);
-        chassis.moveToPose(-24, -24, 125, 3500,{.maxSpeed =70},false);
-        pros::delay(100);
+        //chassis.moveToPose(-30, -17, 110, 1500,{.lead=.01, .minSpeed = 70,.earlyExitRange=8});
+        chassis.moveToPose(-24, -24, 135, 1250,{.lead=.01},false);
+        pros::delay(500);
         lowerMotor.move_velocity(0);
-        chassis.turnToHeading(45, 3000);
-        chassis.moveToPose(-13, -13, 45, 2000);
+        chassis.turnToHeading(45, 1000);
+        chassis.moveToPose(-12.5, -12.5 , 45, 1500, {.minSpeed=50},false);
         lowerMotor.move_velocity(-600);
         upperMotor.move_velocity(-600);
-        pros::delay(3500);
-        chassis.moveToPose(-24, -24, 45, 2000,{.forwards=false},false);
-        chassis.turnToHeading(225, 1500);
+        pros::delay(2000);
+        chassis.moveToPose(-24, -24, 45, 1250,{.forwards=false},false);
+        chassis.turnToHeading(225, 1000);
         lowerMotor.move_velocity(600);
         upperMotor.move_velocity(600);
-        chassis.moveToPose(-59, -48, 270, 5000);
-        pros::delay(1000);
+        loaderVar = !loaderVar;
+        loader.set_value(loaderVar);
+        chassis.moveToPose(-63, -48, 270, 3250,{.lead=.62});
+        //pros::delay(1000);
         chassis.moveToPose(-48, -48, 270, 1000, {.forwards=false});
-        chassis.turnToHeading(90, 1000);
-        chassis.moveToPose(-31.75, -48, 90, 1500);
+        chassis.turnToHeading(90, 800);
+        chassis.moveToPose(-30.75, -48, 90, 2500);
+        loaderVar = !loaderVar;
+        loader.set_value(loaderVar);
+        pivotVar = !pivotVar; // toggle
+        pivot.set_value(pivotVar);
         outtake=!outtake;
         outTake.set_value(outtake);
     }
@@ -263,14 +269,8 @@ void opcontrol() {
         }
 		if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT))
         {
-            if(loaderVar)
-            {  
-                loader.set_value(true);                
-            }
-            else {
-                loader.set_value(false);
-            }
             loaderVar = !loaderVar;
+            loader.set_value(loaderVar);
         }
         pros::delay(20);
 	}
