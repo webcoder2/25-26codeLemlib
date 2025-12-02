@@ -173,23 +173,27 @@ void competition_initialize() {}
  */
 void autonomous() 
 {
-    if(autonNum == 1)
+    if(autonNum == 0)
     {
         
-        chassis.setPose(0,0,0);
-        //intake.move_velocity(600);
-        chassis.moveToPoint(0,48,100000000);
-        //chassis.turnToHeading(90, 10000000);
-    }
-    else if(autonNum ==0){
-        chassis.setPose(-54,-16,90);
+        chassis.setPose(-46,15,0);
         lowerMotor.move_velocity(600);
-        //chassis.moveToPose(-30, -17, 110, 1500,{.lead=.01, .minSpeed = 70,.earlyExitRange=8});
-        chassis.moveToPose(-24, -24, 135, 1250,{.lead=.01},false);
+        chassis.moveToPose(-25, 48, 90, 3500,{},false);
+        pivotVar = !pivotVar; // toggle
+        pivot.set_value(pivotVar);
+        outtake=!outtake;
+        outTake.set_value(outtake);
+        upperMotor.move_velocity(600);
+    }
+    else if(autonNum ==3){
+        chassis.setPose(-54,-17,90);
+        lowerMotor.move_velocity(600);
+        chassis.moveToPose(-40, -17, 90, 750,{.minSpeed = 90,.earlyExitRange=9});
+        chassis.moveToPose(-24, -24, 135, 1250,{.lead=.001},false);
         pros::delay(500);
         lowerMotor.move_velocity(0);
         chassis.turnToHeading(45, 1000);
-        chassis.moveToPose(-12.5, -12.5 , 45, 1500, {.minSpeed=50},false);
+        chassis.moveToPose(-11.5, -13.5 , 45, 1500, {.minSpeed=50},false);
         lowerMotor.move_velocity(-600);
         upperMotor.move_velocity(-600);
         pros::delay(2000);
@@ -199,7 +203,7 @@ void autonomous()
         upperMotor.move_velocity(600);
         loaderVar = !loaderVar;
         loader.set_value(loaderVar);
-        chassis.moveToPose(-63, -48, 270, 3250,{.lead=.62});
+        chassis.moveToPose(-63, -49, 270, 3250,{.lead=.62});
         //pros::delay(1000);
         chassis.moveToPose(-48, -48, 270, 1000, {.forwards=false});
         chassis.turnToHeading(90, 800);
@@ -210,6 +214,40 @@ void autonomous()
         pivot.set_value(pivotVar);
         outtake=!outtake;
         outTake.set_value(outtake);
+    }
+    else if (autonNum==1) {
+        chassis.setPose(-54,-17,90);
+        lowerMotor.move_velocity(600);
+        chassis.moveToPose(-40, -17, 90, 750,{.minSpeed = 90,.earlyExitRange=9});
+        chassis.moveToPose(-24, -24, 135, 2500,{.lead=.001},false);
+        pros::delay(500);
+        lowerMotor.move_velocity(0);
+        chassis.turnToHeading(45, 1000);
+        chassis.moveToPose(-11.5, -13.5 , 45, 1500, {.minSpeed=50},false);
+        lowerMotor.move_velocity(-600);
+        upperMotor.move_velocity(-600);
+        pros::delay(4000);
+        chassis.moveToPose(-24, -24, 45, 1250,{.forwards=false},false);
+        chassis.turnToHeading(225, 1000);
+        lowerMotor.move_velocity(600);
+        upperMotor.move_velocity(600);
+        loaderVar = !loaderVar;
+        loader.set_value(loaderVar);
+        chassis.moveToPose(-63, -49, 270, 3250,{.lead=.62});
+        pros::delay(1000);
+        chassis.moveToPose(-48, -48, 270, 1000, {.forwards=false});
+        chassis.turnToHeading(90, 800);
+        chassis.moveToPose(-30.75, -48, 90, 2500);
+        loaderVar = !loaderVar;
+        loader.set_value(loaderVar);
+        pivotVar = !pivotVar; // toggle
+        pivot.set_value(pivotVar);
+        outtake=!outtake;
+        outTake.set_value(outtake);
+        pros::delay(10000);
+        chassis.moveToPose(-48, -48, 90, 1000, {.forwards=false},false);
+        chassis.turnToHeading(-45, 1250);
+        chassis.moveToPose(-65, 0,0, 8000);
     }
     else if(autonNum ==2){
         chassis.setPose(-54,16,90);
