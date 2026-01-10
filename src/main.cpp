@@ -28,7 +28,7 @@ pros::Rotation vert_sensor(10);
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
 pros::adi::DigitalOut descore('H');
 pros::adi::DigitalOut loader('A');
-//pros::adi::DigitalOut outTake('H');
+pros::adi::DigitalOut outTake('G');
 lemlib::Drivetrain drivetrain(&left_motors, // Left motor group
                               &right_motors, // Right motor group
                               12.25, // 12.675 inch track width
@@ -46,7 +46,7 @@ lemlib::OdomSensors sensors(&vert_tracking_wheel,
 // Lateral PID controller
 lemlib::ControllerSettings lateral_controller(11, // Proportional gain (kP)
                                               .1, // Integral gain (kI)
-                                              22, // Derivative gain (kD)
+                                              24, // Derivative gain (kD)
                                               1.5, // Anti windup 3
                                               0.25, // Small error range, in inches .25
                                               200, //200 Small error range timeout, in milliseconds
@@ -103,7 +103,7 @@ void initialize() {
 	chassis.calibrate();
     loader.set_value(loaderVar);
     descore.set_value(pivotVar);
-    //outTake.set_value(outtake);
+    outTake.set_value(outtake);
     pros::lcd::initialize();
     //endIntake.set_brake_mode(pros::MotorBrake::hold);
     pros:: Task screenTask([&]() {
@@ -178,41 +178,84 @@ void autonomous()
 {
     if(autonNum == 0)
     {
-        chassis.setPose(0,0,0);
-        chassis.moveToPoint(0,48, 100000);
+        chassis.setPose(-45.5, 14,0);
+        chassis.moveToPose(-45.5, 48, 0, 1500);
+        chassis.turnToHeading(270, 1000);
+        loaderVar = !loaderVar;
+        loader.set_value(loaderVar);
+        chassis.moveToPoint(-56.6, 48, 1000, {.minSpeed= 100,.earlyExitRange=4},false);
+        lowerMotor.move_velocity(600);
+        pros::delay(3000);
+        lowerMotor.move_velocity(0);
+        chassis.moveToPoint(-25, 48, 2500,{.forwards=false},false);
+        lowerMotor.move_velocity(600);
+        endIntake.move_velocity(600);
+        pros::delay(2000);
+        lowerMotor.move_velocity(0);
+    }
+    else if (autonNum == 2)
+    {
+        chassis.setPose(-45.5, -14,180);
+        chassis.moveToPose(-45.5, -48, 180, 1500);
+        chassis.turnToHeading(270, 1000);
+        loaderVar = !loaderVar;
+        loader.set_value(loaderVar);
+        chassis.moveToPoint(-56.6, -48, 1000, {.minSpeed= 100,.earlyExitRange=4},false);
+        lowerMotor.move_velocity(600);
+        pros::delay(3000);
+        lowerMotor.move_velocity(0);
+        chassis.moveToPoint(-25, -48, 2500,{.forwards=false},false);
+        lowerMotor.move_velocity(600);
+        endIntake.move_velocity(600);
+        pros::delay(2000);
+        lowerMotor.move_velocity(0);
     }
     //Skills AUTO 
     else if(autonNum ==3){
         chassis.setPose(-45.5, -14,180);
         chassis.moveToPose(-45.5, -48, 180, 1500);
         chassis.turnToHeading(270, 1000);
+        loaderVar = !loaderVar;
+        loader.set_value(loaderVar);
         chassis.moveToPoint(-56.6, -48, 1000, {.minSpeed= 100,.earlyExitRange=4},false);
         lowerMotor.move_velocity(600);
         pros::delay(3000);
         lowerMotor.move_velocity(0);
         chassis.moveToPoint(-48, -48, 1000,{.forwards=false},false);
+        loaderVar = !loaderVar;
+        loader.set_value(loaderVar);
         chassis.turnToHeading(180, 1000);
-        chassis.moveToPoint(-48, -59, 1000);
+        chassis.moveToPoint(-48, -62, 1000);
         chassis.turnToHeading(90,1000);
-        chassis.moveToPoint(45, -59,3000);
+        chassis.moveToPoint(45, -62,3500);
         chassis.turnToHeading(0, 1000);
         chassis.moveToPoint(45, -48, 1000);
         chassis.turnToHeading(90, 1000);
-        chassis.moveToPoint(30, -48, 1000,{.forwards=false},false);
+        chassis.moveToPoint(25, -48, 1500,{.forwards=false},false);
         lowerMotor.move_velocity(600);
         endIntake.move_velocity(600);
         pros::delay(3000);
         lowerMotor.move_velocity(0);
         endIntake.move_velocity(0);
+        loaderVar = !loaderVar;
+        loader.set_value(loaderVar);
         chassis.moveToPoint(56.6, -48, 1000,{.minSpeed= 100,.earlyExitRange=4},false);
         lowerMotor.move_velocity(600);
         pros::delay(3000);
         lowerMotor.move_velocity(0);
-        chassis.moveToPoint(30, -48, 1000,{.forwards=false},false);
+        chassis.moveToPoint(25, -48, 1500,{.forwards=false},false);
         lowerMotor.move_velocity(600);
         endIntake.move_velocity(600);
         pros::delay(3000);
         lowerMotor.move_velocity(0);
+        chassis.moveToPoint(45, -48, 1000);
+        chassis.turnToHeading(0, 1000);
+        chassis.moveToPoint(45, -34, 1000);
+        chassis.turnToHeading(270,1000);
+        chassis.moveToPose(-62,-34 , 270, 4000);
+        chassis.turnToHeading(0, 1000);
+        chassis.moveToPose(-62,0 , 0, 4000);
+
         
 
         /*chassis.setPose(-54,-17,90);
@@ -338,6 +381,11 @@ void opcontrol() {
         {
             loaderVar = !loaderVar;
             loader.set_value(loaderVar);
+        }
+        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B))
+        {
+            outtake = !outtake;
+            outTake.set_value(outtake);
         }
         pros::delay(20);
 	}
