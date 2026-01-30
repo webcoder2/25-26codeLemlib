@@ -4,6 +4,7 @@
 #include "pros/abstract_motor.hpp"
 #include "pros/adi.h"
 #include "pros/adi.hpp"
+#include "pros/distance.hpp"
 #include "pros/misc.h"
 #include "pros/motor_group.hpp"
 #include "pros/motors.hpp"
@@ -20,6 +21,7 @@ pros::MotorGroup left_motors({-7, 8, -9}, pros::MotorGearset::blue); // Left mot
 pros::MotorGroup right_motors({1, -2, 3}, pros::MotorGearset::blue); // Right motors on ports 13, 16, 17
 pros::Imu imu(11);
 pros::Motor lowerMotor(-15);
+pros::v5::Distance back(12);
 //pros::Motor upperMotor(-19);
 //pros::MotorGroup intake({lowerMotor,upperMotor});
 pros::Motor endIntake(18);
@@ -46,7 +48,7 @@ lemlib::OdomSensors sensors(&vert_tracking_wheel,
 // Lateral PID controller
 lemlib::ControllerSettings lateral_controller(11, // Proportional gain (kP)
                                               .1, // Integral gain (kI)
-                                              24, // Derivative gain (kD)
+                                              23, // Derivative gain (kD)
                                               1.5, // Anti windup 3
                                               0.25, // Small error range, in inches .25
                                               200, //200 Small error range timeout, in milliseconds
@@ -110,7 +112,8 @@ void initialize() {
         while (true) {
             pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
             pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
-            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta);
+            pros::lcd::print(3, "Distance:  %d\n", back.get()); // heading
             pros::delay(20);
         }
     });
@@ -176,7 +179,8 @@ void competition_initialize() {}
  */
 void autonomous() 
 {
-    if(autonNum == 0)
+    //left Auto only loader
+    if(autonNum == 1)
     {
         chassis.setPose(-45.5, 14,0);
         chassis.moveToPose(-45.5, 48, 0, 1500);
@@ -193,6 +197,7 @@ void autonomous()
         pros::delay(2000);
         lowerMotor.move_velocity(0);
     }
+    //Right auto only loader
     else if (autonNum == 2)
     {
         chassis.setPose(-45.5, -14,180);
@@ -211,35 +216,47 @@ void autonomous()
         lowerMotor.move_velocity(0);
     }
     //Skills AUTO 
-    else if(autonNum ==3){
+    else if(autonNum ==0){
         chassis.setPose(-45.5, -14,180);
         chassis.moveToPose(-45.5, -48, 180, 1500);
         chassis.turnToHeading(270, 1000);
         loaderVar = !loaderVar;
         loader.set_value(loaderVar);
-        chassis.moveToPoint(-56.6, -48, 1000, {.minSpeed= 100,.earlyExitRange=4},false);
         lowerMotor.move_velocity(600);
+        chassis.moveToPoint(-59, -48, 1250, {},false);
+        //lowerMotor.move_velocity(600);
+        /*chassis.turnToHeading(260, 300);
+        chassis.turnToHeading(280, 300);
+        chassis.turnToHeading(260, 300);
+        chassis.turnToHeading(280, 300);
+        chassis.turnToHeading(260, 300);
+        chassis.turnToHeading(280, 300);
+        chassis.turnToHeading(260, 300);
+        chassis.turnToHeading(280, 300);
+        chassis.turnToHeading(270, 300);*/
         pros::delay(3000);
-        lowerMotor.move_velocity(0);
-        chassis.moveToPoint(-48, -48, 1000,{.forwards=false},false);
+        //lowerMotor.move_velocity(0);
+        chassis.moveToPoint(-42, -48, 1000,{.forwards=false},false);
         loaderVar = !loaderVar;
         loader.set_value(loaderVar);
-        chassis.turnToHeading(180, 1000);
-        chassis.moveToPoint(-48, -62, 1000);
+        chassis.turnToHeading(135, 1000);
+        chassis.moveToPoint(-29, -62, 1000);
         chassis.turnToHeading(90,1000);
-        chassis.moveToPoint(45, -62,3500);
+        chassis.moveToPoint(45, -62,3500, {.maxSpeed=80});
         chassis.turnToHeading(0, 1000);
         chassis.moveToPoint(45, -48, 1000);
+        chassis.setPose(45,-(67.5-(back.get()/25.4)),0);
         chassis.turnToHeading(90, 1000);
         chassis.moveToPoint(25, -48, 1500,{.forwards=false},false);
         lowerMotor.move_velocity(600);
         endIntake.move_velocity(600);
         pros::delay(3000);
+        
         lowerMotor.move_velocity(0);
         endIntake.move_velocity(0);
         loaderVar = !loaderVar;
         loader.set_value(loaderVar);
-        chassis.moveToPoint(56.6, -48, 1000,{.minSpeed= 100,.earlyExitRange=4},false);
+        chassis.moveToPoint(58, -48, 1500,{},false);
         lowerMotor.move_velocity(600);
         pros::delay(3000);
         lowerMotor.move_velocity(0);
@@ -247,14 +264,17 @@ void autonomous()
         lowerMotor.move_velocity(600);
         endIntake.move_velocity(600);
         pros::delay(3000);
+        
         lowerMotor.move_velocity(0);
         chassis.moveToPoint(45, -48, 1000);
         chassis.turnToHeading(0, 1000);
+        loaderVar = !loaderVar;
+        loader.set_value(loaderVar);
         chassis.moveToPoint(45, -34, 1000);
         chassis.turnToHeading(270,1000);
         chassis.moveToPose(-62,-34 , 270, 4000);
         chassis.turnToHeading(0, 1000);
-        chassis.moveToPose(-62,0 , 0, 4000);
+        chassis.moveToPoint(-62,0 , 4000);
 
         
 
@@ -287,7 +307,27 @@ void autonomous()
         outtake=!outtake;
         outTake.set_value(outtake);*/
     }
-    else if (autonNum==1) {
+    //riht side with intaking balls
+    else if (autonNum==2) {
+        chassis.setPose(-48.5,-17,90);
+        chassis.moveToPoint(-34, -17, 750);
+        chassis.turnToHeading(115, 750);
+        lowerMotor.move_velocity(600);
+        chassis.moveToPose(-20, -28,145, 2000, {},false);
+        lowerMotor.move_velocity(0);
+        chassis.turnToHeading(225, 1000);
+        chassis.moveToPose(-48, -48, 225, 1500);
+        chassis.turnToHeading(270, 1000);
+        loader.set_value(true);
+        chassis.moveToPoint(-56.6, -48, 1000, {.minSpeed= 100,.earlyExitRange=4},false);
+        lowerMotor.move_velocity(600);
+        pros::delay(2750);
+        lowerMotor.move_velocity(0);
+        loader.set_value(false);
+        chassis.moveToPoint(-27, -48, 2000,{.forwards=false});
+        pros::delay(1750);
+        lowerMotor.move_velocity(600);
+        endIntake.move_velocity(600);
         /*chassis.setPose(-54,-17,90);
         lowerMotor.move_velocity(600);
         chassis.moveToPose(-40, -17, 90, 750,{.minSpeed = 90,.earlyExitRange=9});
@@ -322,6 +362,25 @@ void autonomous()
         chassis.moveToPose(-65, 0,0, 8000);*/
     }
     else if(autonNum ==2){
+        chassis.setPose(-48.5,17,90);
+        chassis.moveToPoint(-34, 17, 750);
+        chassis.turnToHeading(65, 750);
+        lowerMotor.move_velocity(600);
+        chassis.moveToPose(-20, 28,35, 2000, {},false);
+        lowerMotor.move_velocity(0);
+        chassis.turnToHeading(315, 1000);
+        chassis.moveToPose(-48, 48, 315, 1500);
+        chassis.turnToHeading(270, 1000);
+        loader.set_value(true);
+        chassis.moveToPoint(-57.3, 48, 1000, {.minSpeed= 100,.earlyExitRange=4},false);
+        lowerMotor.move_velocity(600);
+        pros::delay(2750);
+        lowerMotor.move_velocity(0);
+        loader.set_value(false);
+        chassis.moveToPoint(-27, 48, 2000,{.forwards=false});
+        pros::delay(1750);
+        lowerMotor.move_velocity(600);
+        endIntake.move_velocity(600);
         /*chassis.setPose(-54,16,90);
         lowerMotor.move_velocity(600);
         upperMotor.move_velocity(600);
