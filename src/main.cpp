@@ -1,6 +1,7 @@
 #include "main.h"
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/trackingWheel.hpp"
+#include "lemlib/timer.hpp"
 #include "pros/abstract_motor.hpp"
 #include "pros/adi.h"
 #include "pros/adi.hpp"
@@ -22,6 +23,7 @@ pros::MotorGroup right_motors({1, -2, 3}, pros::MotorGearset::blue); // Right mo
 pros::Imu imu(11);
 pros::Motor lowerMotor(-15);
 pros::v5::Distance back(12);
+pros::v5::Distance front(19);
 //pros::Motor upperMotor(-19);
 //pros::MotorGroup intake({lowerMotor,upperMotor});
 pros::Motor endIntake(18);
@@ -114,6 +116,7 @@ void initialize() {
             pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
             pros::lcd::print(2, "Theta: %f", chassis.getPose().theta);
             pros::lcd::print(3, "Distance:  %d\n", back.get()); // heading
+            pros::lcd::print(4, "Distance:  %d\n", front.get());
             pros::delay(20);
         }
     });
@@ -121,32 +124,86 @@ void initialize() {
         while(1){
             if(!pros::competition::is_autonomous())
             {
-                if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1))
+                if((controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) && (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)))
                 {
                     intakeRun = 1;
+                    lowerMotor.move_velocity(600*intakeRun);
+                    endIntake.move_velocity(600*intakeRun);
                 }
                 else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
                     intakeRun = -1;
+                    lowerMotor.move_velocity(600*intakeRun);
+                    endIntake.move_velocity(600*intakeRun);
 
                 }
-                else{
-                    intakeRun = 0;
+                else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
+                    intakeRun = 1;
+                    lowerMotor.move_velocity(600*intakeRun);
                 }
-                lowerMotor.move_velocity(600*intakeRun);
                 //upperMotor.move_velocity(600*intakeRun);
-                if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
+                else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
+                    intakeRun = 1;
+                    outtake = true;
+                    outTake.set_value(outtake);
                     endIntake.move_velocity(intakeRun*600);
+                    lowerMotor.move_velocity(intakeRun*600);
                 }
+                
+                
+                
                 else {
                     endIntake.move_velocity(0);
+                    lowerMotor.move_velocity(0);
+                    outtake = false;
+                    outTake.set_value(outtake);
+                    //pivotVar = false; // toggle
+                    //descore.set_value(pivotVar);
+                    intakeRun = 0;
+                    endIntake.move_velocity(600*intakeRun);
                 }
-                //endIntake.move_velocity(600*outtake);
+                if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
+                    pivotVar = false; // toggle
+                    descore.set_value(pivotVar);
+                }
+                else {
+                    pivotVar = true; // toggle
+                    descore.set_value(pivotVar);
+                }
             }
             pros::delay(20);
 
         }
     });
 }
+
+void stopAtWall() {
+    const int targetMM = 257;
+
+    while (true) {
+        int dist = front.get(); // mm
+
+        // ignore bad readings
+        if (dist < 50 || dist > 2000) {
+            pros::delay(10);
+            continue;
+        }
+
+        if (dist <= targetMM) {
+            break;
+        }
+
+        // slow down as you approach the wall
+        int speed = std::clamp((dist - targetMM) * 3, 30, 90);
+
+        // drive straight forward (assumes already facing wall)
+        chassis.arcade(speed, 0);
+        pros::delay(10);
+    }
+
+    // hard stop
+    chassis.arcade(0, 0);
+}
+
 
 /**
  * Runs while the robot is in the disabled state of Field Management System or
@@ -223,17 +280,23 @@ void autonomous()
         loaderVar = !loaderVar;
         loader.set_value(loaderVar);
         lowerMotor.move_velocity(600);
-        chassis.moveToPoint(-59, -48, 1250, {},false);
+        pros::delay(400);
+        lemlib::Timer timer(3000);
+        while (timer.getTimePassed()<2000) {
+            stopAtWall();
+        }
+        //chassis.moveToPoint(-59, -48, 1250, {},false);
+        stopAtWall();
         //lowerMotor.move_velocity(600);
-        /*chassis.turnToHeading(260, 300);
-        chassis.turnToHeading(280, 300);
-        chassis.turnToHeading(260, 300);
-        chassis.turnToHeading(280, 300);
-        chassis.turnToHeading(260, 300);
-        chassis.turnToHeading(280, 300);
-        chassis.turnToHeading(260, 300);
-        chassis.turnToHeading(280, 300);
-        chassis.turnToHeading(270, 300);*/
+        chassis.turnToHeading(265, 300);
+        chassis.turnToHeading(275, 300);
+        chassis.turnToHeading(265, 300);
+        chassis.turnToHeading(275, 300);
+        chassis.turnToHeading(265, 300);
+        chassis.turnToHeading(275, 300);
+        chassis.turnToHeading(265, 300);
+        chassis.turnToHeading(275, 300);
+        chassis.turnToHeading(270, 300);
         pros::delay(3000);
         //lowerMotor.move_velocity(0);
         chassis.moveToPoint(-42, -48, 1000,{.forwards=false},false);
@@ -248,6 +311,7 @@ void autonomous()
         chassis.setPose(45,-(67.5-(back.get()/25.4)),0);
         chassis.turnToHeading(90, 1000);
         chassis.moveToPoint(25, -48, 1500,{.forwards=false},false);
+        chassis.setPose(28.75,-48,90);
         lowerMotor.move_velocity(600);
         endIntake.move_velocity(600);
         pros::delay(3000);
@@ -256,11 +320,14 @@ void autonomous()
         endIntake.move_velocity(0);
         loaderVar = !loaderVar;
         loader.set_value(loaderVar);
-        chassis.moveToPoint(58, -48, 1500,{},false);
         lowerMotor.move_velocity(600);
+        pros::delay(400);
+        //chassis.moveToPoint(58, -48, 1500,{},false);
+        stopAtWall();
         pros::delay(3000);
-        lowerMotor.move_velocity(0);
+        //lowerMotor.move_velocity(0);
         chassis.moveToPoint(25, -48, 1500,{.forwards=false},false);
+        chassis.setPose(28.75,-48,90);
         lowerMotor.move_velocity(600);
         endIntake.move_velocity(600);
         pros::delay(3000);
@@ -272,7 +339,7 @@ void autonomous()
         loader.set_value(loaderVar);
         chassis.moveToPoint(45, -34, 1000);
         chassis.turnToHeading(270,1000);
-        chassis.moveToPose(-62,-34 , 270, 4000);
+        chassis.moveToPose(-65,-34 , 270, 4000);
         chassis.turnToHeading(0, 1000);
         chassis.moveToPoint(-62,0 , 4000);
 
@@ -306,6 +373,8 @@ void autonomous()
         descore.set_value(pivotVar);
         outtake=!outtake;
         outTake.set_value(outtake);*/
+        
+
     }
     //riht side with intaking balls
     else if (autonNum==2) {
@@ -431,21 +500,21 @@ void opcontrol() {
 		int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
         int rightY = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 		chassis.arcade(leftY, rightY);
-        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
+        /*if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
         {
             pivotVar = !pivotVar; // toggle
             descore.set_value(pivotVar);
-        }
+        }*/
 		if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_RIGHT))
         {
             loaderVar = !loaderVar;
             loader.set_value(loaderVar);
         }
-        if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B))
+        /*if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_B))
         {
             outtake = !outtake;
             outTake.set_value(outtake);
-        }
+        }*/
         pros::delay(20);
 	}
 }
