@@ -19,6 +19,7 @@ int intakeRun = 0;
 bool outtake = false;
 bool pivotVar = false;
 bool loaderVar = false;
+bool ptoVar = false;
 pros::MotorGroup left_motors({-7, 8, -9}, pros::MotorGearset::blue); // Left motors on ports 20, 3, 5
 pros::MotorGroup right_motors({1, -2, 3}, pros::MotorGearset::blue); // Right motors on ports 13, 16, 17
 pros::Imu imu(11);
@@ -35,6 +36,7 @@ pros::Controller controller(pros::E_CONTROLLER_MASTER);
 pros::adi::DigitalOut descore('H');
 pros::adi::DigitalOut loader('A');
 pros::adi::DigitalOut outTake('G');
+pros::adi::DigitalOut pto ('C');
 lemlib::Timer distTime(1000);
 lemlib::Drivetrain drivetrain(&left_motors, // Left motor group
                               &right_motors, // Right motor group
@@ -104,6 +106,10 @@ void loaderFunc()
     loaderVar = !loaderVar;
     loader.set_value(loaderVar);
 }
+void ptoFunc(){
+    ptoVar = !ptoVar;
+    pto.set_value(ptoVar);
+}
 /**
  * Runs initialization code. This occurs as soon as the program is started.
  *
@@ -130,51 +136,53 @@ void initialize() {
     pros:: Task InTaKETask([&]() {
         while(1){
             if(!pros::competition::is_autonomous()&& !pros::competition::is_disabled())
-            {
-                if((controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) && (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)))
-                {
-                    intakeRun = 1;
-                    lowerMotor.move_velocity(600*intakeRun);
-                    endIntake.move_velocity(600*intakeRun);
-                }
-                else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
-                    intakeRun = -1;
-                    lowerMotor.move_velocity(600*intakeRun);
-                    endIntake.move_velocity(600*intakeRun);
+            {   
+                if(!ptoVar){
+                    if((controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)) && (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)))
+                    {
+                        intakeRun = 1;
+                        lowerMotor.move_velocity(600*intakeRun);
+                        endIntake.move_velocity(600*intakeRun);
+                    }
+                    else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+                        intakeRun = -1;
+                        lowerMotor.move_velocity(600*intakeRun);
+                        endIntake.move_velocity(600*intakeRun);
 
-                }
-                else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
-                    intakeRun = 1;
-                    lowerMotor.move_velocity(600*intakeRun);
-                }
-                //upperMotor.move_velocity(600*intakeRun);
-                else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
-                    intakeRun = 1;
-                    outtake = true;
-                    outTake.set_value(outtake);
-                    endIntake.move_velocity(intakeRun*600);
-                    lowerMotor.move_velocity(intakeRun*600);
-                }
-                
-                
-                
-                else {
-                    endIntake.move_velocity(0);
-                    lowerMotor.move_velocity(0);
-                    outtake = false;
-                    outTake.set_value(outtake);
-                    //pivotVar = false; // toggle
-                    //descore.set_value(pivotVar);
-                    intakeRun = 0;
-                    endIntake.move_velocity(600*intakeRun);
-                }
-                if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
-                    pivotVar = false; // toggle
-                    descore.set_value(pivotVar);
-                }
-                else {
-                    pivotVar = true; // toggle
-                    descore.set_value(pivotVar);
+                    }
+                    else if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_R1)){
+                        intakeRun = 1;
+                        lowerMotor.move_velocity(600*intakeRun);
+                    }
+                    //upperMotor.move_velocity(600*intakeRun);
+                    else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_L1)) {
+                        intakeRun = 1;
+                        outtake = true;
+                        outTake.set_value(outtake);
+                        endIntake.move_velocity(intakeRun*600);
+                        lowerMotor.move_velocity(intakeRun*600);
+                    }
+                    
+                    
+                    
+                    else {
+                        endIntake.move_velocity(0);
+                        lowerMotor.move_velocity(0);
+                        outtake = false;
+                        outTake.set_value(outtake);
+                        //pivotVar = false; // toggle
+                        //descore.set_value(pivotVar);
+                        intakeRun = 0;
+                        endIntake.move_velocity(600*intakeRun);
+                    }
+                    if(controller.get_digital(pros::E_CONTROLLER_DIGITAL_L2)){
+                        pivotVar = false; // toggle
+                        descore.set_value(pivotVar);
+                    }
+                    else {
+                        pivotVar = true; // toggle
+                        descore.set_value(pivotVar);
+                    }
                 }
             }
             pros::delay(20);
@@ -764,9 +772,17 @@ void autonomous()
 void opcontrol() {
 	
 	while (true) {
+        
 		int leftY = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
         int rightY = controller.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+        if (ptoVar) {
+            lowerMotor.move(std::clamp(throttle_curve.curve(leftY)-steer_curve.curve(rightY),-127.0f,127.0f));
+            endIntake.move(std::clamp(throttle_curve.curve(leftY)+steer_curve.curve(rightY),-127.0f,127.0f));
+        }
 		chassis.arcade(leftY, rightY);
+        
+        throttle_curve.curve(leftY);
+        steer_curve.curve(rightY);
         /*if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y))
         {
             pivotVar = !pivotVar; // toggle
