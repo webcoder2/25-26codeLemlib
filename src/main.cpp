@@ -46,7 +46,7 @@ lemlib::Drivetrain drivetrain(&left_motors, // Left motor group
                               2 // Horizontal drift is 2 (for now)
 );
 lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_sensor, lemlib::Omniwheel::NEW_2, -2.65);
-lemlib::TrackingWheel vert_tracking_wheel(&vert_sensor, lemlib::Omniwheel::NEW_2, 0);
+lemlib::TrackingWheel vert_tracking_wheel(&vert_sensor, lemlib::Omniwheel::NEW_2, -.5);
 lemlib::OdomSensors sensors(&vert_tracking_wheel,
                             nullptr,
                             /*&horizontal_tracking_wheel*/nullptr, 
@@ -66,9 +66,9 @@ lemlib::ControllerSettings lateral_controller(12, // Proportional gain (kP)
 
 // Angular PID controller
 lemlib::ControllerSettings angular_controller(4.75, // Proportional gain (kP)
-                                              .28, //.23 Integral gain (kI)
+                                              .15, //.23 Integral gain (kI)
                                               31.5, // Derivative gain (kD)
-                                            6, //6 Anti windup
+                                            4.5, //6 Anti windup
                                               0, // Small error range, in degrees.225
                                               0, // 400Small error range timeout, in milliseconds
                                               0, // .75Large error range, in degrees
@@ -191,7 +191,7 @@ void initialize() {
 }
 
 void stopAtWall() {
-    const int targetMM = 257;
+    const int targetMM = 400;
     distTime.reset();
     while (true) {
         int dist = front.get(); // mm
@@ -273,8 +273,8 @@ void autonomous()
     else if (autonNum == 0)
     {
         chassis.setPose(-46, -14,180);
-        chassis.moveToPose(-46, -48, 180, 1000,{},false);
-        chassis.turnToHeading(270, 750,{},false);
+        chassis.moveToPose(-46, -48, 270, 1250,{.lead = 0},false);
+        //chassis.turnToHeading(270, 750,{},false);
         loaderFunc();
         //chassis.moveToPoint(-56.6, -48, 1000, {.minSpeed= 100,.earlyExitRange=4},false);
         lowerMotor.move_velocity(-600);
@@ -288,32 +288,33 @@ void autonomous()
         stopAtWall();
         pros::delay(250);
         stopAtWall();
-        pros::delay(100);
+        pros::delay(250);
         stopAtWall();
         //pros::delay(100); 
         //stopAtWall();  
         //pros::delay(3000);
-        //lowerMotor.move_velocity(0);
-        chassis.moveToPoint(-25, -48, 1500,{.forwards=false},false);
-        chassis.setPose(-28.75,-48,270);
-        lowerMotor.move_velocity(600);
-        endIntake.move_velocity(600);
+        lowerMotor.move_velocity(0);
+        chassis.moveToPoint(-25, -48, 1750,{.forwards=false},false);
+        chassis.setPose(-28.75,-48,chassis.getPose().theta);
+        lowerMotor.move_velocity(-600);
+        endIntake.move_velocity(-600);
         pros::delay(1000);
         lowerMotor.move_velocity(0);
         endIntake.move_velocity(0);
         pros::delay(100);
-        lowerMotor.move_velocity(600);
-        endIntake.move_velocity(600);
+        lowerMotor.move_velocity(-600);
+        endIntake.move_velocity(-600);
         pros::delay(1000);
         lowerMotor.move_velocity(0);
         endIntake.move_velocity(0);
         
         
         loaderFunc();
-        chassis.moveToPose(-38, -48, 270,2000,{},false);
-        chassis.turnToHeading(315, 1000);
-        chassis.moveToPose(-24, -59, 270, 1000,{.forwards=false,.lead=0});
-        chassis.moveToPose(-12, -59, 270, 2000);
+        chassis.moveToPose(-40, -48, 270,1500,{},false);
+        chassis.turnToHeading(315, 750);
+        chassis.moveToPose(-28, -57, 270, 1250,{.forwards=false,.lead=0});
+        //chassis.turnToHeading(270, 1000);
+        chassis.moveToPose(-12, -57, 270, 2000,{.forwards=false,.lead=0});
         /*chassis.turnToHeading(45, 1000);
         chassis.moveToPose(-14, -40.5, 120, 2500,{},false);
         descore.set_value(false);
@@ -759,7 +760,7 @@ void autonomous()
         outtake=!outtake;
         outTake.set_value(outtake);*/
     }
-    else if(autonNum ==0){
+    else if(autonNum ==1){
         
         chassis.setPose(0, 0, 0);
     // Turn to 90 degrees
