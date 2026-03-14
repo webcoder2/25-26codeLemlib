@@ -47,7 +47,7 @@ lemlib::Drivetrain drivetrain(&left_motors, // Left motor group
                               11.375, // 12.675 inch track width
                               lemlib::Omniwheel::NEW_325, // Using new 3.25" omnis
                               450, // Drivetrain RPM is 450
-                              2 // Horizontal drift is 2 (for now)
+                              8 // Horizontal drift is 2 (for now)
 );
 lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_sensor, lemlib::Omniwheel::NEW_2, -2.65);
 lemlib::TrackingWheel vert_tracking_wheel(&vert_sensor, lemlib::Omniwheel::NEW_2, -.25);
@@ -258,7 +258,7 @@ void competition_initialize() {}
 void autonomous() 
 {
     //left Auto only loader
-    if(autonNum == 0)
+    if(autonNum == 1)
     {
         chassis.setPose(-48, 14,0);
        // outTake.set_value(!outtake);
@@ -268,6 +268,7 @@ void autonomous()
         loaderFunc();
         //chassis.moveToPoint(-56.6, -48, 1000, {.minSpeed= 100,.earlyExitRange=4},false);
         lowerMotor.move_velocity(-600);
+        descore.set_value(true);
         //lowerMotor.move_velocity(600);
         pros::delay(400);
         /*lemlib::Timer timer(3000);
@@ -295,7 +296,7 @@ void autonomous()
         pros::delay(1000);
         lowerMotor.move_velocity(0);
         endIntake.move_velocity(0);
-
+        descore.set_value(false);
         loaderFunc();
         chassis.moveToPose(-40, 48, 270,1500,{},false);
         chassis.turnToHeading(335, 750);
@@ -304,11 +305,11 @@ void autonomous()
         chassis.moveToPose(-12, 39, 270, 2000,{.forwards=false,.lead=0});
     }
     //Right auto only loader
-    else if (autonNum == 1)
+    else if (autonNum == 0)
     {
         chassis.setPose(-48, -14,180);
         descore.set_value(true);
-        chassis.moveToPose(-48, -46.5, 270, 1250,{.lead = 0},false);
+        chassis.moveToPose(-48, -43, 270, 1500,{.lead = 0},false);
         chassis.setPose(-48, -66.2283+left.get()/25.4, chassis.getPose().theta);
 
         //chassis.turnToHeading(270, 750,{},false);
@@ -348,9 +349,9 @@ void autonomous()
         
         
         loaderFunc();
-        chassis.moveToPose(-40, -48, 270,1500,{},false);
+        chassis.moveToPose(-40, -48, 270,1250,{},false);
         chassis.turnToHeading(315, 750);
-        chassis.moveToPose(-28, -57, 270, 1250,{.forwards=false,.lead=0});
+        chassis.moveToPose(-28, -57, 270, 1000,{.forwards=false,.lead=0});
         //chassis.turnToHeading(270, 1000);
         chassis.moveToPose(-12, -57, 270, 2000,{.forwards=false,.lead=0});
         /*chassis.turnToHeading(45, 1000);
@@ -467,11 +468,11 @@ void autonomous()
     }
     //Skills AUTO 
     else if(autonNum ==2){
-        chassis.setPose(-45.5, -14,180);
-        chassis.moveToPose(-45.5, -48, 180, 1500);
-        chassis.turnToHeading(270, 750);
+        chassis.setPose(-48, -14,180);
+        chassis.moveToPose(-48, -48, 270, 1750,{.lead = 0},false);
+        //chassis.turnToHeading(270, 750);
         loaderFunc();
-        lowerMotor.move_velocity(600);
+        lowerMotor.move_velocity(-600);
         pros::delay(400);
         /*lemlib::Timer timer(3000);
         while (timer.getTimePassed()<2000) {
@@ -497,7 +498,7 @@ void autonomous()
         chassis.turnToHeading(270, 300);
         pros::delay(3000);*/
         lowerMotor.move_velocity(0);
-        lowerMotor.move_velocity(600);
+        lowerMotor.move_velocity(-600);
         chassis.moveToPoint(-42, -48, 1000,{.forwards=false},false);
         loaderFunc();
         lowerMotor.move_velocity(0);
@@ -512,20 +513,20 @@ void autonomous()
         chassis.turnToHeading(90, 750);
         chassis.moveToPoint(25, -48, 1200,{.forwards=false},false);
         chassis.setPose(28.75,-48,90);
-        lowerMotor.move_velocity(600);
-        endIntake.move_velocity(600);
+        lowerMotor.move_velocity(-600);
+        endIntake.move_velocity(-600);
         pros::delay(1500);
         lowerMotor.move_velocity(0);
         endIntake.move_velocity(0);
         pros::delay(100);
-        lowerMotor.move_velocity(600);
-        endIntake.move_velocity(600);
+        lowerMotor.move_velocity(-600);
+        endIntake.move_velocity(-600);
         pros::delay(1500);
         
         lowerMotor.move_velocity(0);
         endIntake.move_velocity(0);
         loaderFunc();
-        lowerMotor.move_velocity(600);
+        lowerMotor.move_velocity(-600);
         pros::delay(400);
         //chassis.moveToPoint(58, -48, 1500,{},false);
         stopAtWall();
@@ -540,14 +541,14 @@ void autonomous()
         //lowerMotor.move_velocity(0);
         chassis.moveToPoint(25, -48, 1200,{.forwards=false},false);
         chassis.setPose(28.75,-48,90);
-        lowerMotor.move_velocity(600);
-        endIntake.move_velocity(600);
+        lowerMotor.move_velocity(-600);
+        endIntake.move_velocity(-600);
         pros::delay(1500);
         lowerMotor.move_velocity(0);
         endIntake.move_velocity(0);
         pros::delay(100);
-        lowerMotor.move_velocity(600);
-        endIntake.move_velocity(600);
+        lowerMotor.move_velocity(-600);
+        endIntake.move_velocity(-600);
         pros::delay(1500);
         loaderFunc();
         endIntake.move_velocity(0);
@@ -562,7 +563,7 @@ void autonomous()
         chassis.turnToHeading(90, 750,{},false);
         //chassis.setPose(42, (65.75-(left.get()/25.4)), 90);
 
-        lowerMotor.move_velocity(600);
+        lowerMotor.move_velocity(-600);
         pros::delay(400);
         //chassis.moveToPoint(58, -48, 1500,{},false);
         stopAtWall();
@@ -586,19 +587,19 @@ void autonomous()
         chassis.turnToHeading(270, 750);
         chassis.moveToPoint(-25, 48, 1500,{.forwards=false},false);
         chassis.setPose(-28.75,48,270);
-        lowerMotor.move_velocity(600);
-        endIntake.move_velocity(600);
+        lowerMotor.move_velocity(-600);
+        endIntake.move_velocity(-600);
         pros::delay(1500);
         lowerMotor.move_velocity(0);
         endIntake.move_velocity(0);
         pros::delay(100);
-        lowerMotor.move_velocity(600);
-        endIntake.move_velocity(600);
+        lowerMotor.move_velocity(-600);
+        endIntake.move_velocity(-600);
         pros::delay(1500);
         lowerMotor.move_velocity(0);
         endIntake.move_velocity(0);
         loaderFunc();
-        lowerMotor.move_velocity(600);
+        lowerMotor.move_velocity(-600);
         pros::delay(400);
         //chassis.moveToPoint(58, -48, 1500,{},false);
         stopAtWall();
@@ -611,14 +612,14 @@ void autonomous()
         pros::delay(100);  
         chassis.moveToPoint(-25, 48, 1200,{.forwards=false},false);
         chassis.setPose(-28.75,48,270);
-        lowerMotor.move_velocity(600);
-        endIntake.move_velocity(600);
+        lowerMotor.move_velocity(-600);
+        endIntake.move_velocity(-600);
         pros::delay(1500);
         lowerMotor.move_velocity(0);
         endIntake.move_velocity(0);
         pros::delay(100);
-        lowerMotor.move_velocity(600);
-        endIntake.move_velocity(600);
+        lowerMotor.move_velocity(-600);
+        endIntake.move_velocity(-600);
         pros::delay(1500);
         chassis.moveToPose(-42, 48, 270, 1500);
         chassis.turnToHeading(180, 1000);
